@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
-export const useFeedWorker = async () => {
+export const useFeedWorker = () => {
+  const [status, setStatus] = useState("loading");
   const worker = useRef<Worker>();
 
   useEffect(() => {
@@ -8,7 +9,8 @@ export const useFeedWorker = async () => {
       worker.current = new Worker(
         new URL("@/workers/feed.worker", import.meta.url)
       );
-      worker.current.postMessage({ type: "START_FEED" });
+      setStatus("ready");
+      // worker.current.postMessage({ type: "START_FEED" });
       worker.current.onmessage = (event) => {
         switch (event.data.type) {
           case "SNAPSHOT":
@@ -24,5 +26,15 @@ export const useFeedWorker = async () => {
       };
     })();
   });
-  return worker;
+
+  if (worker && worker?.current && status === "ready") {
+    return {
+      status: "ready",
+      feed: worker.current,
+    };
+  }
+  return {
+    status: "loading",
+    feed: null,
+  };
 };
