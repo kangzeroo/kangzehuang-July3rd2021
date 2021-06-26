@@ -1,0 +1,11 @@
+{
+  "recommendations": [ 
+    "ms-vscode.vscode-typescript-tslint-plugin",
+    "rbbit.typescript-hero",
+    "GregorBiswanger.json2ts",
+    "stringham.move-ts",
+    "pmneo.tsimporter",
+    "esbenp.prettier-vscode",
+    "msjsdiag.debugger-for-chrome"
+  ]
+}
