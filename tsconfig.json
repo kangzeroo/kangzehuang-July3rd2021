@@ -17,6 +17,7 @@
     "typeRoots" : ["./node_modules/@types", "src/types"],
     "paths": {
       "@/components/*": ["src/components/*"],
+      "@/api/*": ["src/api/*"],
       "@/styles/*": ["src/styles/*"],
       "@/workers/*": ["src/workers/*"],
       "@/types/*": ["src/types/*"]

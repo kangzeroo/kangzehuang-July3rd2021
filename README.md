@@ -8,7 +8,10 @@ Eventually it would look like this:
 
 This project is currently written in Javascript as a proof of concept, but will be moved to Typescript for final submission.
 
-To run it:
+See it in production:
+https://crypto-orderbook-orcin.vercel.app/
+
+Or to run it locally:
 
 ```
 $ npm run start

@@ -1,17 +1,8 @@
 import React, { useEffect } from "react";
+import { useFeedWorker } from "@/api/feed.hook";
 
 const Orderbook = () => {
-  useEffect(() => {
-    (async () => {
-      const worker = new Worker(
-        new URL("@/workers/example.worker", import.meta.url)
-      );
-      worker.addEventListener("message", (event) => {
-        console.log("main thread received: ", event.data);
-      });
-      worker.postMessage("ping from main thread");
-    })();
-  }, []);
+  const feed = useFeedWorker();
   return <div>🎉</div>;
 };
 export default Orderbook;
