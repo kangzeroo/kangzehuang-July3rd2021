@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useFeedWorker } from "@/api/feed.hook";
 
 const Orderbook = () => {
-  const { status, feed } = useFeedWorker();
+  const { status, feed, orderBook } = useFeedWorker();
 
   if (status === "loading") {
     return <p>Feed Connection Loading...</p>;
@@ -25,6 +25,7 @@ const Orderbook = () => {
     <section>
       <button onClick={startFeed}>Start Feed</button>
       <button onClick={killFeed}>Kill Feed</button>
+      {JSON.stringify(orderBook)}
     </section>
   );
 };
