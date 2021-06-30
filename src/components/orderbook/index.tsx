@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { useFeedWorker } from "@/api/feed.hook";
 
-const Orderbook = () => {
+const Orderbook = (): ReactNode => {
   const { status, feed, orderBook } = useFeedWorker();
 
   if (status === "loading") {

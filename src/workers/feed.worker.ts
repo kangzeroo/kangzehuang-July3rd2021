@@ -42,10 +42,13 @@ class FeedWebSocket {
     this.feed = feed;
   }
 
-  startFeed() {}
+  startFeed() {
+    console.log("THIS IS YOUR FAVORITE FEED");
+  }
 
   closeFeed() {
     try {
+      console.log("---> KILLED FEED CLOSE IT");
       console.log(this.feed);
       const unsubscribe = {
         event: "unsubscribe",
@@ -63,15 +66,21 @@ class FeedWebSocket {
     }
   }
 }
+// const feed = new FeedWebSocket();
 
+let feed;
 onmessage = (event) => {
-  const feed = new FeedWebSocket();
   switch (event.data.type) {
     case "START_FEED":
+      feed = new FeedWebSocket();
       feed.startFeed();
       break;
     case "KILL_FEED":
-      feed.closeFeed();
+      console.log("WE KILLING TIS FEED");
+      console.log(feed);
+      if (feed) {
+        feed?.closeFeed();
+      }
       break;
     default:
       console.log("Instructions not specific enough");

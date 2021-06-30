@@ -39,7 +39,7 @@ export const useFeedWorker = () => {
       setStatus("ready");
       // worker.current.postMessage({ type: "START_FEED" });
       worker.current.onmessage = (event) => {
-        console.log(">>>>");
+        // console.log(">>>>");
         switch (event.data.type) {
           case "SNAPSHOT":
             const feedData = event.data.data;
