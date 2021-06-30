@@ -22,6 +22,7 @@ export const useFeedWorker = (): IUseFeedWorker => {
         switch (event.data.type) {
           case "SNAPSHOT": {
             const orderBookSnapshot = event.data.data;
+            console.log(orderBookSnapshot);
             setOrderBook(orderBookSnapshot);
             break;
           }

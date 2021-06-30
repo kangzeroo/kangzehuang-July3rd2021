@@ -64,5 +64,7 @@ test("groups tickSize of 0.05", () => {
     { price: 10.55, size: 5, total: 15 },
     { price: 10.65, size: 6, total: 21 },
   ];
-  expect(groupTickRows(tickSize, inputOrderDeltas)).toBe(output);
+  const results = groupTickRows(tickSize, inputOrderDeltas);
+  console.log(results);
+  expect(results).toBe(output);
 });

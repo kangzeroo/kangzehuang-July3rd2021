@@ -99,8 +99,8 @@ class FeedWebSocket {
   }) {
     const orderBookSnapshot = {
       ticker,
-      asks: groupTickRows(this.tickSize, asks),
-      bids: groupTickRows(this.tickSize, bids),
+      asks: groupTickRows(tickSize, asks),
+      bids: groupTickRows(tickSize, bids),
     };
     return orderBookSnapshot;
   }
