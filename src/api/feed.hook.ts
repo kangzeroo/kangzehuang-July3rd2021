@@ -1,29 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-
-type TPrice = number;
-type TSize = number;
-type TOrderDelta = [TPrice, TSize];
-
-const sortRows = (orderDeltas: TOrderDelta[]): TOrderRow[] => {
-  return orderDeltas.map((delta) => {
-    return {
-      price: delta[0],
-      total: delta[0],
-      size: delta[1],
-    };
-  });
-};
-
-type TOrderRow = {
-  price: number;
-  size: number;
-  total: number;
-};
-interface IOrderBook {
-  ticker: string;
-  asks: TOrderRow[];
-  bids: TOrderRow[];
-}
+import { IOrderBook } from "@/types/tickerFeed.type";
 
 interface IUseFeedWorker {
   status: string;
@@ -45,13 +21,7 @@ export const useFeedWorker = (): IUseFeedWorker => {
       worker.current.onmessage = (event) => {
         switch (event.data.type) {
           case "SNAPSHOT": {
-            const feedData = event.data.data;
-            console.log("---- snapshot ----", feedData);
-            const orderBookSnapshot = {
-              ticker: "PI_XBTUSD",
-              asks: sortRows(feedData.asks),
-              bids: sortRows(feedData.bids),
-            };
+            const orderBookSnapshot = event.data.data;
             setOrderBook(orderBookSnapshot);
             break;
           }
