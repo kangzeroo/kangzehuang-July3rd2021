@@ -42,6 +42,7 @@ class FeedWebSocket {
 
   closeFeed() {
     try {
+      console.log("closeFeedd", this.feed);
       const unsubscribe = {
         event: "unsubscribe",
         feed: "book_ui_1",
@@ -59,17 +60,22 @@ class FeedWebSocket {
   }
 }
 
-let feed: FeedWebSocket;
+let feed: FeedWebSocket | undefined;
 onmessage = (event) => {
   switch (event.data.type) {
     case "START_FEED": {
-      feed = new FeedWebSocket();
-      feed.startFeed();
+      const isFeedAlreadyExists = feed ? true : false;
+      console.log("isFeedAlreadyExists: ", isFeedAlreadyExists);
+      if (!isFeedAlreadyExists) {
+        feed = new FeedWebSocket();
+        feed.startFeed();
+      }
       break;
     }
     case "KILL_FEED": {
       if (feed) {
         feed?.closeFeed();
+        feed = undefined;
       }
       break;
     }
