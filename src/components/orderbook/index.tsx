@@ -1,17 +1,32 @@
-import React, { useEffect } from "react";
+import React from "react";
+import { useFeedWorker } from "@/api/feed.hook";
 
 const Orderbook = () => {
-  useEffect(() => {
-    (async () => {
-      const worker = new Worker(
-        new URL("@/workers/example.worker", import.meta.url)
-      );
-      worker.addEventListener("message", (event) => {
-        console.log("main thread received: ", event.data);
-      });
-      worker.postMessage("ping from main thread");
-    })();
-  }, []);
-  return <div>🎉</div>;
+  const { status, feed, orderBook } = useFeedWorker();
+
+  if (status === "loading") {
+    return <p>Feed Connection Loading...</p>;
+  }
+
+  const startFeed = () => {
+    console.log("Starting feed...");
+    console.log(feed);
+    feed?.postMessage({ type: "START_FEED" });
+  };
+
+  const killFeed = () => {
+    console.log("Killing feed...");
+    feed?.postMessage({
+      type: "KILL_FEED",
+    });
+  };
+
+  return (
+    <section>
+      <button onClick={startFeed}>Start Feed</button>
+      <button onClick={killFeed}>Kill Feed</button>
+      {JSON.stringify(orderBook)}
+    </section>
+  );
 };
 export default Orderbook;
