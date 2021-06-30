@@ -42,26 +42,46 @@ export const groupTickRows = (
   // 213 x 0.05 = 10.65
 
   const roundDownToTickDecimals = (input: number, tickSize: number) => {
-    console.log(`input: ${input}, tickSize: ${tickSize}`);
+    console.log("input: ", input);
+    console.log("tickSize: ", tickSize);
     // get the decimal places of the tickSize
     const decimalPlace =
       Math.floor(tickSize) === tickSize
         ? 0
         : tickSize.toString().split(".")[1].length || 0;
-    console.log(`decimalPlace: ${decimalPlace}`);
+    console.log("decimalPlace: ", decimalPlace);
     if (decimalPlace === 0) {
       return Math.floor(input);
     }
+    console.log(
+      "input * Math.pow(10, decimalPlace) = ",
+      Math.floor(input * Math.pow(10, decimalPlace))
+    );
+    console.log("Math.pow(10, decimalPlace) = ", Math.pow(10, decimalPlace));
     // round down input to the decimal of the tickSize
     const roundedToDecimalOfTickSize =
-      Math.floor(input * decimalPlace * 10) / (decimalPlace * 10);
-    console.log(`roundedToDecimalOfTickSize: ${roundedToDecimalOfTickSize}`);
+      Math.floor(input * Math.pow(10, decimalPlace)) /
+      Math.pow(10, decimalPlace);
+    console.log("roundedToDecimalOfTickSize: ", roundedToDecimalOfTickSize);
+    console.log(
+      "roundedToDecimalOfTickSize / tickSize ",
+      roundedToDecimalOfTickSize / tickSize
+    );
+    console.log(
+      "Math.round(roundedToDecimalOfTickSize / tickSize) = ",
+      Math.round(roundedToDecimalOfTickSize / tickSize)
+    );
     // Divide the rounded by the floor(tickSize)
-    // const roundedDown =
-    //   (roundedToDecimalOfTickSize / Math.floor(tickSize)) * tickSize;
-    // console.log(`roundedDown: ${roundedDown}`);
+    const roundedDown = parseFloat(
+      (
+        Math.floor(
+          parseFloat((roundedToDecimalOfTickSize / tickSize).toFixed(10))
+        ) * tickSize
+      ).toFixed(decimalPlace)
+    );
+    console.log(`roundedDown: ${roundedDown}`);
 
-    return roundedToDecimalOfTickSize;
+    return roundedDown;
   };
 
   let total = 0;
