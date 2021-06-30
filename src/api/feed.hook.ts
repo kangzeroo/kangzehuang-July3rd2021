@@ -25,7 +25,12 @@ interface IOrderBook {
   bids: TOrderRow[];
 }
 
-export const useFeedWorker = () => {
+interface IUseFeedWorker {
+  status: string;
+  feed: Worker | null;
+  orderBook: IOrderBook | undefined;
+}
+export const useFeedWorker = (): IUseFeedWorker => {
   const [status, setStatus] = useState("loading");
   const [orderBook, setOrderBook] = useState<IOrderBook>();
   const worker = useRef<Worker>();
@@ -37,11 +42,9 @@ export const useFeedWorker = () => {
         new URL("@/workers/feed.worker", import.meta.url)
       );
       setStatus("ready");
-      // worker.current.postMessage({ type: "START_FEED" });
       worker.current.onmessage = (event) => {
-        // console.log(">>>>");
         switch (event.data.type) {
-          case "SNAPSHOT":
+          case "SNAPSHOT": {
             const feedData = event.data.data;
             console.log("---- snapshot ----", feedData);
             const orderBookSnapshot = {
@@ -51,11 +54,12 @@ export const useFeedWorker = () => {
             };
             setOrderBook(orderBookSnapshot);
             break;
+          }
           case "ORDER":
             // console.log("---- delta ----", event.data);
             break;
           case "FEED_KILLED":
-            console.log("feed was killed");
+            console.log("frontend: feed killed");
             break;
         }
       };

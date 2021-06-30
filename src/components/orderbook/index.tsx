@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode } from "react";
 import { useFeedWorker } from "@/api/feed.hook";
 
 const Orderbook = (): ReactNode => {

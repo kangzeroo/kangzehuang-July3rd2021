@@ -1,10 +1,9 @@
 class FeedWebSocket {
   feed: WebSocket;
 
-  constructor(endpoint = "wss://www.cryptofacilities.com/ws/v1") {
-    console.log("CONSTRUCOTR!!");
+  startFeed(endpoint = "wss://www.cryptofacilities.com/ws/v1") {
     const feed = new WebSocket(endpoint);
-    feed.onopen = (event) => {
+    feed.onopen = () => {
       const subscription = {
         event: "subscribe",
         feed: "book_ui_1",
@@ -30,9 +29,8 @@ class FeedWebSocket {
           break;
       }
     };
-    feed.onclose = (event) => {
+    feed.onclose = () => {
       console.log("Feed was closed!");
-      console.log(event);
     };
     feed.onerror = (error) => {
       console.log("Error happened!");
@@ -42,14 +40,8 @@ class FeedWebSocket {
     this.feed = feed;
   }
 
-  startFeed() {
-    console.log("THIS IS YOUR FAVORITE FEED");
-  }
-
   closeFeed() {
     try {
-      console.log("---> KILLED FEED CLOSE IT");
-      console.log(this.feed);
       const unsubscribe = {
         event: "unsubscribe",
         feed: "book_ui_1",
@@ -66,25 +58,25 @@ class FeedWebSocket {
     }
   }
 }
-// const feed = new FeedWebSocket();
 
-let feed;
+let feed: FeedWebSocket;
 onmessage = (event) => {
   switch (event.data.type) {
-    case "START_FEED":
+    case "START_FEED": {
       feed = new FeedWebSocket();
       feed.startFeed();
       break;
-    case "KILL_FEED":
-      console.log("WE KILLING TIS FEED");
-      console.log(feed);
+    }
+    case "KILL_FEED": {
       if (feed) {
         feed?.closeFeed();
       }
       break;
-    default:
+    }
+    default: {
       console.log("Instructions not specific enough");
       console.log(event);
+    }
   }
 };
 
