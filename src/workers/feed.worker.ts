@@ -2,12 +2,17 @@ import {
   ITickerShape,
   TOrderDelta,
   ICryptoFacilitiesWSSnapshot,
+  IOrderBookState,
 } from "@/types/tickerFeed.type";
-import { groupTickRows } from "@/api/tick-group/tick-group.api";
+import {
+  groupTickRows,
+  refreshOrderBookState,
+} from "@/api/tick-group/tick-group.api";
 class FeedWebSocket {
   feed: WebSocket;
   ticker: string;
   tickSize: number;
+  orderBookState: IOrderBookState;
 
   constructor(
     endpoint = "wss://www.cryptofacilities.com/ws/v1",
@@ -34,9 +39,10 @@ class FeedWebSocket {
           const orderBookSnapshot = this.groupByTickSize({
             asks: data.asks,
             bids: data.bids,
-            ticker: data.product_id,
+            ticker: this.ticker,
             tickSize: this.tickSize,
           });
+          this.orderBookState = orderBookSnapshot;
           postMessage({
             type: "SNAPSHOT",
             data: orderBookSnapshot,
@@ -83,7 +89,17 @@ class FeedWebSocket {
   }
 
   changeTickSize(tickSize: number) {
+    console.log("tickSize: ", tickSize);
+    const nextOrderBookState = refreshOrderBookState(
+      tickSize,
+      this.orderBookState
+    );
+    this.orderBookState = nextOrderBookState;
     this.tickSize = tickSize;
+    postMessage({
+      type: "SNAPSHOT",
+      data: nextOrderBookState,
+    });
   }
 
   groupByTickSize({
@@ -97,7 +113,7 @@ class FeedWebSocket {
     ticker: string;
     tickSize: number;
   }) {
-    const orderBookSnapshot = {
+    const orderBookSnapshot: IOrderBookState = {
       ticker,
       asks: groupTickRows(tickSize, asks),
       bids: groupTickRows(tickSize, bids),
@@ -133,6 +149,7 @@ onmessage = (event: MessageEvent) => {
       break;
     }
     case "CHANGE_TICK_SIZE": {
+      console.log(event.data);
       feed.changeTickSize(event.data.tickSize);
       break;
     }

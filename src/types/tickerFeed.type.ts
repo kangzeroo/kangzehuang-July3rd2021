@@ -8,11 +8,6 @@ export type TOrderRow = {
   size: number;
   total: number;
 };
-export interface IOrderBook {
-  ticker: string;
-  asks: TOrderRow[];
-  bids: TOrderRow[];
-}
 
 type TPrice = number;
 type TSize = number;
@@ -24,4 +19,10 @@ export interface ICryptoFacilitiesWSSnapshot {
   feed: string;
   bids: TOrderDelta[];
   asks: TOrderDelta[];
+}
+
+export interface IOrderBookState {
+  ticker: string;
+  asks: TOrderRow[];
+  bids: TOrderRow[];
 }

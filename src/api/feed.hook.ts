@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { IOrderBook } from "@/types/tickerFeed.type";
+import { IOrderBookState } from "@/types/tickerFeed.type";
 
 interface IUseFeedWorker {
   status: string;
   feed: Worker | null;
-  orderBook: IOrderBook | undefined;
+  orderBook: IOrderBookState | undefined;
 }
 export const useFeedWorker = (): IUseFeedWorker => {
   const [status, setStatus] = useState("loading");
-  const [orderBook, setOrderBook] = useState<IOrderBook>();
+  const [orderBook, setOrderBook] = useState<IOrderBookState>();
   const worker = useRef<Worker>();
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export const useFeedWorker = (): IUseFeedWorker => {
       worker.current.onmessage = (event) => {
         switch (event.data.type) {
           case "SNAPSHOT": {
-            const orderBookSnapshot = event.data.data;
+            const orderBookSnapshot: IOrderBookState = event.data.data;
             console.log(orderBookSnapshot);
             setOrderBook(orderBookSnapshot);
             break;

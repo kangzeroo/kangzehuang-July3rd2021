@@ -1,4 +1,8 @@
-import { TOrderRow, TOrderDelta } from "@/types/tickerFeed.type";
+import {
+  TOrderRow,
+  TOrderDelta,
+  IOrderBookState,
+} from "@/types/tickerFeed.type";
 
 // const input = [
 //   [11, 1],
@@ -16,6 +20,29 @@ import { TOrderRow, TOrderDelta } from "@/types/tickerFeed.type";
 //   [10, 5, 15],
 //   [10, 6, 21],
 // ];
+
+export const refreshOrderBookState = (
+  tickSize: number,
+  prevOrderBookState: IOrderBookState
+): IOrderBookState => {
+  const convertToOrderDeltas = (orderRows: TOrderRow[]): TOrderDelta[] => {
+    return orderRows.map((row) => {
+      return [row.price, row.size];
+    });
+  };
+  const nextOrderBookState = {
+    ticker: prevOrderBookState.ticker,
+    bids: groupTickRows(
+      tickSize,
+      convertToOrderDeltas(prevOrderBookState.bids)
+    ),
+    asks: groupTickRows(
+      tickSize,
+      convertToOrderDeltas(prevOrderBookState.asks)
+    ),
+  };
+  return nextOrderBookState;
+};
 
 export const groupTickRows = (
   tickSize: number,
@@ -42,35 +69,18 @@ export const groupTickRows = (
   // 213 x 0.05 = 10.65
 
   const roundDownToTickDecimals = (input: number, tickSize: number) => {
-    console.log("input: ", input);
-    console.log("tickSize: ", tickSize);
     // get the decimal places of the tickSize
     const decimalPlace =
       Math.floor(tickSize) === tickSize
         ? 0
-        : tickSize.toString().split(".")[1].length || 0;
-    console.log("decimalPlace: ", decimalPlace);
+        : tickSize.toString().split(".")[1]?.length || 0;
     if (decimalPlace === 0) {
       return Math.floor(input);
     }
-    console.log(
-      "input * Math.pow(10, decimalPlace) = ",
-      Math.floor(input * Math.pow(10, decimalPlace))
-    );
-    console.log("Math.pow(10, decimalPlace) = ", Math.pow(10, decimalPlace));
     // round down input to the decimal of the tickSize
     const roundedToDecimalOfTickSize =
       Math.floor(input * Math.pow(10, decimalPlace)) /
       Math.pow(10, decimalPlace);
-    console.log("roundedToDecimalOfTickSize: ", roundedToDecimalOfTickSize);
-    console.log(
-      "roundedToDecimalOfTickSize / tickSize ",
-      roundedToDecimalOfTickSize / tickSize
-    );
-    console.log(
-      "Math.round(roundedToDecimalOfTickSize / tickSize) = ",
-      Math.round(roundedToDecimalOfTickSize / tickSize)
-    );
     // Divide the rounded by the floor(tickSize)
     const roundedDown = parseFloat(
       (
@@ -79,8 +89,6 @@ export const groupTickRows = (
         ) * tickSize
       ).toFixed(decimalPlace)
     );
-    console.log(`roundedDown: ${roundedDown}`);
-
     return roundedDown;
   };
 
@@ -94,8 +102,5 @@ export const groupTickRows = (
       total,
     };
   });
-
-  console.log(grouping);
-
   return grouping;
 };

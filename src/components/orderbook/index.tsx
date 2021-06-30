@@ -41,10 +41,14 @@ const Orderbook = () => {
     });
   };
 
-  const changeTickSize = (event: React.ChangeEvent) => {
+  const changeTickSize = (nativeEvent: React.BaseSyntheticEvent) => {
+    console.log(nativeEvent);
+    console.log(nativeEvent.target.value);
+    const nextTickSize = nativeEvent.target.value;
+    setTickSize(nextTickSize);
     feed?.postMessage({
       type: "CHANGE_TICK_SIZE",
-      tickSize: event.target.nodeValue,
+      tickSize: nextTickSize,
     });
   };
 
@@ -53,7 +57,14 @@ const Orderbook = () => {
   return (
     <section>
       <h1>{orderBook?.ticker}</h1>
-      <select name="tickSize" id="tickSize" onChange={changeTickSize}>
+      <select
+        name="tickSize"
+        id="tickSize"
+        value={tickSize}
+        onChange={(e) =>
+          changeTickSize(e.nativeEvent as unknown as React.BaseSyntheticEvent)
+        }
+      >
         {tickSizeOptions.map((tickSize) => {
           return (
             <option key={tickSize} value={tickSize}>

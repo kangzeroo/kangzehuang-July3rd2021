@@ -65,24 +65,5 @@ test("groups tickSize of 0.05", () => {
     { price: 10.65, size: 6, total: 21 },
   ];
   const results = groupTickRows(tickSize, inputOrderDeltas);
-  console.log(results);
-  expect(results).toStrictEqual(output);
-});
-
-test("0.05 tickSize edge case at 10.6", () => {
-  const tickSize = 0.05;
-  const inputOrderDeltas: TOrderDelta[] = [[10.6, 2]];
-  const output = [{ price: 10.6, size: 2, total: 2 }];
-  const results = groupTickRows(tickSize, inputOrderDeltas);
-  console.log(results);
-  expect(results).toStrictEqual(output);
-});
-
-test("0.5 tickSize edge case at 10.4", () => {
-  const tickSize = 0.5;
-  const inputOrderDeltas: TOrderDelta[] = [[10.4, 1]];
-  const output = [{ price: 10.0, size: 1, total: 1 }];
-  const results = groupTickRows(tickSize, inputOrderDeltas);
-  console.log(results);
   expect(results).toStrictEqual(output);
 });
