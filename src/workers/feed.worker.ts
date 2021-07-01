@@ -98,7 +98,6 @@ class FeedWebSocket {
   }
 
   updateDelta(orderDelta: IGranularOrderDelta) {
-    console.log(orderDelta);
     const currentDateStamp = new Date();
     if (orderDelta.asks) {
       orderDelta.asks.forEach((delta) => {
@@ -155,10 +154,23 @@ class FeedWebSocket {
     //   tickSize: this.tickSize,
     // });
     // this.orderBookState = orderBookSnapshot;
-    console.log(this.sourceOrderBook);
+    // console.log(this.sourceOrderBook);
+    const orderBookSnapshot = this.groupByTickSize({
+      asks: Object.keys(this.sourceOrderBook.asks).map((key) => {
+        const { price, size } = this.sourceOrderBook.asks[parseFloat(key)];
+        return [price, size];
+      }),
+      bids: Object.keys(this.sourceOrderBook.bids).map((key) => {
+        const { price, size } = this.sourceOrderBook.bids[parseFloat(key)];
+        return [price, size];
+      }),
+      ticker: this.ticker,
+      tickSize: this.tickSize,
+    });
+    this.orderBookState = orderBookSnapshot;
     postMessage({
       type: "ORDER",
-      data: this.sourceOrderBook,
+      data: orderBookSnapshot,
     });
   }
 
