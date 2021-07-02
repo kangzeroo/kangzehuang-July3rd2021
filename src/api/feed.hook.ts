@@ -17,19 +17,18 @@ export const useFeedWorker = (): IUseFeedWorker => {
       worker.current = new Worker(
         new URL("@/workers/feed.worker", import.meta.url)
       );
-      setStatus("ready");
       worker.current.onmessage = (event) => {
         switch (event.data.type) {
           case "SNAPSHOT": {
             const orderBookSnapshot: IOrderBookState = event.data.data;
             console.log(orderBookSnapshot);
-            setOrderBook(orderBookSnapshot);
+            setOrderBook(Object.freeze(orderBookSnapshot));
             break;
           }
           case "ORDER": {
             const orderBookSnapshot: IOrderBookState = event.data.data;
             console.log(orderBookSnapshot);
-            setOrderBook(orderBookSnapshot);
+            setOrderBook(Object.freeze(orderBookSnapshot));
             break;
           }
           case "FEED_KILLED":
@@ -37,6 +36,7 @@ export const useFeedWorker = (): IUseFeedWorker => {
             break;
         }
       };
+      setStatus("ready");
     })();
   }, []);
 

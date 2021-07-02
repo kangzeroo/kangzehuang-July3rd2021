@@ -1,18 +1,24 @@
 import { css } from "@emotion/css";
-import { TOrderRow, TAskOrBid } from "@/types/tickerFeed.type";
+import { IOrderRowHash, TAskOrBid } from "@/types/tickerFeed.type";
 
 interface IOrderTable {
   title: string;
-  rows: TOrderRow[];
+  rows: IOrderRowHash;
   maxPriceSize: number;
   askOrBid: TAskOrBid;
+  ticker: string;
 }
-const OrderTable = ({ title, rows, maxPriceSize, askOrBid }: IOrderTable) => {
+const OrderTable = ({
+  title,
+  rows,
+  maxPriceSize,
+  askOrBid,
+  ticker,
+}: IOrderTable) => {
   const askOrBidOptions = {
     ask: { key: "ask", color: "red" },
     bid: { key: "bid", color: "green" },
   };
-
   return (
     <table className={styles.table}>
       <thead>
@@ -26,40 +32,46 @@ const OrderTable = ({ title, rows, maxPriceSize, askOrBid }: IOrderTable) => {
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => {
-          const { price, size, total } = row;
-          const colorSpriteWidth = total / maxPriceSize;
-          return (
-            <tr key={price} className={styles.ghostRow}>
-              {askOrBid === askOrBidOptions.ask.key ? (
-                <tr className={styles.colorSprite}>
-                  <td className={styles.uncolored(colorSpriteWidth)}></td>
-                  <td
-                    className={styles.colored(
-                      colorSpriteWidth,
-                      askOrBidOptions[askOrBid].color
-                    )}
-                  ></td>
+        {Object.keys(rows)
+          .map((key) => rows[key as unknown as number])
+          .filter((k) => k)
+          .map((row) => {
+            const { price, size, total } = row;
+            const colorSpriteWidth = total / maxPriceSize;
+            return (
+              <tr
+                key={`${askOrBid}-${price}-${ticker}`}
+                className={styles.ghostRow}
+              >
+                {askOrBid === askOrBidOptions.ask.key ? (
+                  <tr className={styles.colorSprite}>
+                    <td className={styles.uncolored(colorSpriteWidth)}></td>
+                    <td
+                      className={styles.colored(
+                        colorSpriteWidth,
+                        askOrBidOptions[askOrBid].color
+                      )}
+                    ></td>
+                  </tr>
+                ) : (
+                  <tr className={styles.colorSprite}>
+                    <td
+                      className={styles.colored(
+                        colorSpriteWidth,
+                        askOrBidOptions[askOrBid].color
+                      )}
+                    ></td>
+                    <td className={styles.uncolored(colorSpriteWidth)}></td>
+                  </tr>
+                )}
+                <tr className={styles.row}>
+                  <td className={styles.cell}>{price}</td>
+                  <td className={styles.cell}>{size}</td>
+                  <td className={styles.cell}>{total}</td>
                 </tr>
-              ) : (
-                <tr className={styles.colorSprite}>
-                  <td
-                    className={styles.colored(
-                      colorSpriteWidth,
-                      askOrBidOptions[askOrBid].color
-                    )}
-                  ></td>
-                  <td className={styles.uncolored(colorSpriteWidth)}></td>
-                </tr>
-              )}
-              <tr className={styles.row}>
-                <td className={styles.cell}>{price}</td>
-                <td className={styles.cell}>{size}</td>
-                <td className={styles.cell}>{total}</td>
               </tr>
-            </tr>
-          );
-        })}
+            );
+          })}
       </tbody>
     </table>
   );

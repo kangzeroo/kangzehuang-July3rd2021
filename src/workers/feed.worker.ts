@@ -10,6 +10,7 @@ import {
 import {
   groupTickRows,
   refreshOrderBookState,
+  getDecimalPlace,
 } from "@/api/tick-group/tick-group.api";
 class FeedWebSocket {
   feed: WebSocket;
@@ -39,6 +40,7 @@ class FeedWebSocket {
     };
     feed.onmessage = (event) => {
       const data: ICryptoFacilitiesWSSnapshot = JSON.parse(event.data);
+      const decimalPlace = getDecimalPlace(this.tickSize);
       switch (data.feed) {
         case "book_ui_1_snapshot": {
           console.log(data);
@@ -46,14 +48,16 @@ class FeedWebSocket {
           this.lastAnnouncedTime = dateStamp;
           this.sourceOrderBook = {
             ...data,
-            asks: this.mapDeltaArrayToHash(data.asks, dateStamp),
-            bids: this.mapDeltaArrayToHash(data.bids, dateStamp),
+            asks: this.mapDeltaArrayToHash(data.asks, dateStamp, decimalPlace),
+            bids: this.mapDeltaArrayToHash(data.bids, dateStamp, decimalPlace),
           };
           const orderBookSnapshot = this.groupByTickSize({
             asks: data.asks,
             bids: data.bids,
             ticker: this.ticker,
             tickSize: this.tickSize,
+            dateStamp,
+            decimalPlace,
           });
           this.orderBookState = orderBookSnapshot;
           postMessage({
@@ -79,101 +83,6 @@ class FeedWebSocket {
     this.feed = feed;
   }
 
-  mapDeltaArrayToHash(deltaArray: TOrderDelta[], dateStamp: Date) {
-    const deltaHash = deltaArray.reduce(
-      (acc: { [key: number]: TOrderDeltaWithTimestamp }, curr) => {
-        const [price, size] = curr;
-        acc[price] = {
-          price,
-          size,
-          date: dateStamp,
-        };
-        return acc;
-      },
-      {}
-    );
-    return deltaHash;
-  }
-
-  updateDelta(orderDelta: IGranularOrderDelta) {
-    const currentDateStamp = new Date();
-    if (!orderDelta.asks || !orderDelta.bids) {
-      return;
-    }
-    if (orderDelta.asks) {
-      orderDelta.asks.forEach((delta) => {
-        const [price, size] = delta;
-        const prevPriceSnap = this.sourceOrderBook.asks[price];
-        if (!prevPriceSnap && size) {
-          this.sourceOrderBook.asks[price] = {
-            price,
-            size,
-            date: currentDateStamp,
-          };
-        }
-        if (prevPriceSnap && prevPriceSnap.date < currentDateStamp) {
-          if (size === 0) {
-            delete this.sourceOrderBook.asks[price];
-          } else {
-            this.sourceOrderBook.asks[price] = {
-              price,
-              size,
-              date: currentDateStamp,
-            };
-          }
-        }
-      });
-    }
-    if (orderDelta.bids) {
-      orderDelta.bids.forEach((delta) => {
-        const [price, size] = delta;
-        const prevPriceSnap = this.sourceOrderBook.bids[price];
-        if (!prevPriceSnap && size) {
-          this.sourceOrderBook.bids[price] = {
-            price,
-            size,
-            date: currentDateStamp,
-          };
-        }
-        if (prevPriceSnap && prevPriceSnap.date < currentDateStamp) {
-          if (size === 0) {
-            delete this.sourceOrderBook.bids[price];
-          } else {
-            this.sourceOrderBook.bids[price] = {
-              price,
-              size,
-              date: currentDateStamp,
-            };
-          }
-        }
-      });
-    }
-    const orderBookSnapshot = this.groupByTickSize({
-      asks: Object.keys(this.sourceOrderBook.asks).map((key) => {
-        const { price, size } = this.sourceOrderBook.asks[parseFloat(key)];
-        return [price, size];
-      }),
-      bids: Object.keys(this.sourceOrderBook.bids).map((key) => {
-        const { price, size } = this.sourceOrderBook.bids[parseFloat(key)];
-        return [price, size];
-      }),
-      ticker: this.ticker,
-      tickSize: this.tickSize,
-    });
-    const lastAnnouncedTimeMs = this.lastAnnouncedTime.getTime();
-    const allowedNextAnnoucement = new Date(
-      lastAnnouncedTimeMs + this.announcementIntervalMs
-    );
-    if (currentDateStamp > allowedNextAnnoucement) {
-      this.lastAnnouncedTime = currentDateStamp;
-      this.orderBookState = orderBookSnapshot;
-      postMessage({
-        type: "ORDER",
-        data: orderBookSnapshot,
-      });
-    }
-  }
-
   toggleFeed(ticker: ITickerShape) {
     console.log(`Switching from ${this.ticker} to ${ticker.ticker}`);
     const unsubscribe = {
@@ -182,6 +91,7 @@ class FeedWebSocket {
       product_ids: [this.ticker],
     };
     this.feed.send(JSON.stringify(unsubscribe));
+    this.clearState();
     const subscription = {
       event: "subscribe",
       feed: "book_ui_1",
@@ -206,31 +116,6 @@ class FeedWebSocket {
     });
   }
 
-  groupByTickSize({
-    bids,
-    asks,
-    ticker,
-    tickSize,
-  }: {
-    bids: TOrderDelta[];
-    asks: TOrderDelta[];
-    ticker: string;
-    tickSize: number;
-  }) {
-    const newMaxPriceSize = asks
-      .concat(bids)
-      .filter((d) => d[1])
-      .map((d) => d[1])
-      .reduce((acc, curr) => acc + curr, 0);
-    const orderBookSnapshot: IOrderBookState = {
-      ticker,
-      asks: groupTickRows(tickSize, asks),
-      bids: groupTickRows(tickSize, bids),
-      maxPriceSize: newMaxPriceSize,
-    };
-    return orderBookSnapshot;
-  }
-
   closeFeed() {
     try {
       console.log("closeFeed", this.feed);
@@ -248,6 +133,162 @@ class FeedWebSocket {
       console.log("Caught error");
       throw e;
     }
+  }
+
+  private mapDeltaArrayToHash(
+    deltaArray: TOrderDelta[],
+    dateStamp: Date,
+    decimalPlace: number
+  ) {
+    const deltaHash = deltaArray.reduce(
+      (acc: { [key: number]: TOrderDeltaWithTimestamp }, curr) => {
+        const [price, size] = curr;
+        acc[price] = {
+          price: price.toFixed(decimalPlace),
+          size,
+          date: dateStamp,
+        };
+        return acc;
+      },
+      {}
+    );
+    return deltaHash;
+  }
+
+  private updateDelta(orderDelta: IGranularOrderDelta) {
+    const currentDateStamp = new Date();
+    if (!orderDelta.asks || !orderDelta.bids) {
+      return;
+    }
+    const decimalPlace = getDecimalPlace(this.tickSize);
+    if (orderDelta.asks) {
+      orderDelta.asks.forEach((delta) => {
+        const [price, size] = delta;
+        const prevPriceSnap = this.sourceOrderBook.asks[price];
+        if (!prevPriceSnap && size) {
+          this.sourceOrderBook.asks[price] = {
+            price: price.toFixed(decimalPlace),
+            size,
+            date: currentDateStamp,
+          };
+        }
+        if (prevPriceSnap && prevPriceSnap.date < currentDateStamp) {
+          if (size === 0) {
+            delete this.sourceOrderBook.asks[price];
+          } else {
+            this.sourceOrderBook.asks[price] = {
+              price: price.toFixed(decimalPlace),
+              size,
+              date: currentDateStamp,
+            };
+          }
+        }
+      });
+    }
+    if (orderDelta.bids) {
+      orderDelta.bids.forEach((delta) => {
+        const [price, size] = delta;
+        const prevPriceSnap = this.sourceOrderBook.bids[price];
+        if (!prevPriceSnap && size) {
+          this.sourceOrderBook.bids[price] = {
+            price: price.toFixed(decimalPlace),
+            size,
+            date: currentDateStamp,
+          };
+        }
+        if (prevPriceSnap && prevPriceSnap.date < currentDateStamp) {
+          if (size === 0) {
+            delete this.sourceOrderBook.bids[price];
+          } else {
+            this.sourceOrderBook.bids[price] = {
+              price: price.toFixed(decimalPlace),
+              size,
+              date: currentDateStamp,
+            };
+          }
+        }
+      });
+    }
+    const orderBookSnapshot = this.groupByTickSize({
+      asks: Object.keys(this.sourceOrderBook.asks).map((key) => {
+        const { price, size } = this.sourceOrderBook.asks[parseFloat(key)];
+        return [parseFloat(price), size];
+      }),
+      bids: Object.keys(this.sourceOrderBook.bids).map((key) => {
+        const { price, size } = this.sourceOrderBook.bids[parseFloat(key)];
+        return [parseFloat(price), size];
+      }),
+      ticker: this.ticker,
+      tickSize: this.tickSize,
+      dateStamp: currentDateStamp,
+      decimalPlace: getDecimalPlace(this.tickSize),
+    });
+    const lastAnnouncedTimeMs = this.lastAnnouncedTime.getTime();
+    const allowedNextAnnoucement = new Date(
+      lastAnnouncedTimeMs + this.announcementIntervalMs
+    );
+    if (currentDateStamp > allowedNextAnnoucement) {
+      this.lastAnnouncedTime = currentDateStamp;
+      console.log("orderBookSnapshot from worker: ", orderBookSnapshot);
+      this.orderBookState = orderBookSnapshot;
+      postMessage({
+        type: "ORDER",
+        data: orderBookSnapshot,
+      });
+    }
+  }
+
+  private clearState() {
+    const emptySourceOrderBook = {
+      product_id: "",
+      numLevels: 0,
+      feed: "",
+      asks: {},
+      bids: {},
+    };
+    const emptyOrderBookState = {
+      ticker: "",
+      asks: [],
+      bids: [],
+      maxPriceSize: 0,
+    };
+    this.sourceOrderBook = emptySourceOrderBook;
+    this.orderBookState = emptyOrderBookState;
+  }
+
+  private groupByTickSize({
+    bids,
+    asks,
+    ticker,
+    tickSize,
+    dateStamp,
+    decimalPlace,
+  }: {
+    bids: TOrderDelta[];
+    asks: TOrderDelta[];
+    ticker: string;
+    tickSize: number;
+    dateStamp: Date;
+    decimalPlace: number;
+  }) {
+    const newMaxPriceSize = asks
+      .concat(bids)
+      .filter((d) => d[1])
+      .map((d) => d[1])
+      .reduce((acc, curr) => acc + curr, 0);
+    const orderBookSnapshot: IOrderBookState = {
+      ticker,
+      asks: groupTickRows(
+        tickSize,
+        this.mapDeltaArrayToHash(asks, dateStamp, decimalPlace)
+      ),
+      bids: groupTickRows(
+        tickSize,
+        this.mapDeltaArrayToHash(bids, dateStamp, decimalPlace)
+      ),
+      maxPriceSize: newMaxPriceSize,
+    };
+    return orderBookSnapshot;
   }
 }
 

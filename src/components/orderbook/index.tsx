@@ -95,12 +95,14 @@ const Orderbook = () => {
           rows={orderBook.asks}
           maxPriceSize={orderBook.maxPriceSize}
           askOrBid={"ask"}
+          ticker={orderBook.ticker}
         />
         <OrderTable
           title="Bids"
           rows={orderBook.bids}
           maxPriceSize={orderBook.maxPriceSize}
           askOrBid={"bid"}
+          ticker={orderBook.ticker}
         />
       </div>
 
