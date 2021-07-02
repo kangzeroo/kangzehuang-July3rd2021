@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import { IOrderRowHash, TAskOrBid } from "@/types/tickerFeed.type";
-
+import { useWindowSize } from "@/api/windowSize.hook";
 interface IOrderTable {
   title: string;
   rows: IOrderRowHash;
@@ -15,10 +15,17 @@ const OrderTable = ({
   askOrBid,
   ticker,
 }: IOrderTable) => {
+  const { isMobile } = useWindowSize();
   const askOrBidOptions = {
     ask: { key: "ask", color: "red" },
     bid: { key: "bid", color: "green" },
   };
+  const displayRows = Object.keys(rows)
+    .map((key) => rows[key as unknown as number])
+    .filter((k) => k);
+  if (isMobile) {
+    displayRows.reverse();
+  }
   return (
     <table className={styles.table}>
       <thead>
@@ -32,46 +39,43 @@ const OrderTable = ({
         </tr>
       </thead>
       <tbody>
-        {Object.keys(rows)
-          .map((key) => rows[key as unknown as number])
-          .filter((k) => k)
-          .map((row) => {
-            const { price, size, total } = row;
-            const colorSpriteWidth = total / maxPriceSize;
-            return (
-              <tr
-                key={`${askOrBid}-${price}-${ticker}`}
-                className={styles.ghostRow}
-              >
-                {askOrBid === askOrBidOptions.ask.key ? (
-                  <tr className={styles.colorSprite}>
-                    <td className={styles.uncolored(colorSpriteWidth)}></td>
-                    <td
-                      className={styles.colored(
-                        colorSpriteWidth,
-                        askOrBidOptions[askOrBid].color
-                      )}
-                    ></td>
-                  </tr>
-                ) : (
-                  <tr className={styles.colorSprite}>
-                    <td
-                      className={styles.colored(
-                        colorSpriteWidth,
-                        askOrBidOptions[askOrBid].color
-                      )}
-                    ></td>
-                    <td className={styles.uncolored(colorSpriteWidth)}></td>
-                  </tr>
-                )}
-                <tr className={styles.row}>
-                  <td className={styles.cell}>{price}</td>
-                  <td className={styles.cell}>{size}</td>
-                  <td className={styles.cell}>{total}</td>
+        {displayRows.map((row) => {
+          const { price, size, total } = row;
+          const colorSpriteWidth = total / maxPriceSize;
+          return (
+            <tr
+              key={`${askOrBid}-${price}-${ticker}`}
+              className={styles.ghostRow}
+            >
+              {askOrBid === askOrBidOptions.ask.key ? (
+                <tr className={styles.colorSprite}>
+                  <td className={styles.uncolored(colorSpriteWidth)}></td>
+                  <td
+                    className={styles.colored(
+                      colorSpriteWidth,
+                      askOrBidOptions[askOrBid].color
+                    )}
+                  ></td>
                 </tr>
+              ) : (
+                <tr className={styles.colorSprite}>
+                  <td
+                    className={styles.colored(
+                      colorSpriteWidth,
+                      askOrBidOptions[askOrBid].color
+                    )}
+                  ></td>
+                  <td className={styles.uncolored(colorSpriteWidth)}></td>
+                </tr>
+              )}
+              <tr className={styles.row}>
+                <td className={styles.cell}>{price}</td>
+                <td className={styles.cell}>{size}</td>
+                <td className={styles.cell}>{total}</td>
               </tr>
-            );
-          })}
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

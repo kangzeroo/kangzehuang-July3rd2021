@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { css } from "@emotion/css";
 import { useFeedWorker } from "@/api/feed.hook";
+import { useWindowSize } from "@/api/windowSize.hook";
 import OrderTable from "@/components/ordertable";
 
 const feedTickerOptions = {
@@ -16,6 +17,7 @@ const feedTickerOptions = {
 
 const Orderbook = () => {
   const { status, feed, orderBook } = useFeedWorker();
+  const { isMobile } = useWindowSize();
   const [tickSize, setTickSize] = useState(
     feedTickerOptions.PI_ETHUSD.tickSize
   );
@@ -88,8 +90,7 @@ const Orderbook = () => {
           })}
         </select>
       </div>
-
-      <div className={styles.inner}>
+      <div className={styles.inner(isMobile)}>
         <OrderTable
           title="Asks"
           rows={orderBook.asks}
@@ -126,15 +127,19 @@ const styles = {
     justify-content: flex-start;
     align-items: center;
   `,
-  inner: css`
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    justify-content: center;
-    padding: 0px 20px;
-    height: 80vh;
-    overflow: scroll;
-  `,
+  inner: (isMobile: boolean) => {
+    const flexDirection = isMobile ? "column-reverse" : "row";
+    const justifyContent = isMobile ? "flex-start" : "center";
+    return css`
+      display: flex;
+      flex-direction: ${flexDirection};
+      width: 100%;
+      justify-content: ${justifyContent};
+      padding: 0px 20px;
+      height: 80vh;
+      overflow: scroll;
+    `;
+  },
   topbar: css`
     display: flex;
     justify-content: space-between;

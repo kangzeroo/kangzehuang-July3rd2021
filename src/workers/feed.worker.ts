@@ -25,7 +25,6 @@ class FeedWebSocket {
     endpoint = "wss://www.cryptofacilities.com/ws/v1",
     ticker: ITickerShape = { ticker: "PI_XBTUSD", tickSize: 0.5 }
   ) {
-    console.log("CONTR");
     this.ticker = ticker.ticker;
     this.tickSize = ticker.tickSize;
     const feed = new WebSocket(endpoint);
@@ -35,7 +34,6 @@ class FeedWebSocket {
         feed: "book_ui_1",
         product_ids: [ticker.ticker],
       };
-      console.log(subscription);
       this.feed.send(JSON.stringify(subscription));
     };
     feed.onmessage = (event) => {
@@ -43,7 +41,6 @@ class FeedWebSocket {
       const decimalPlace = getDecimalPlace(this.tickSize);
       switch (data.feed) {
         case "book_ui_1_snapshot": {
-          console.log(data);
           const dateStamp = new Date();
           this.lastAnnouncedTime = dateStamp;
           this.sourceOrderBook = {
@@ -84,7 +81,6 @@ class FeedWebSocket {
   }
 
   toggleFeed(ticker: ITickerShape) {
-    console.log(`Switching from ${this.ticker} to ${ticker.ticker}`);
     const unsubscribe = {
       event: "unsubscribe",
       feed: "book_ui_1",
@@ -103,7 +99,6 @@ class FeedWebSocket {
   }
 
   changeTickSize(tickSize: number) {
-    console.log("tickSize: ", tickSize);
     const nextOrderBookState = refreshOrderBookState(
       tickSize,
       this.orderBookState
@@ -118,7 +113,6 @@ class FeedWebSocket {
 
   closeFeed() {
     try {
-      console.log("closeFeed", this.feed);
       const unsubscribe = {
         event: "unsubscribe",
         feed: "book_ui_1",
@@ -229,7 +223,6 @@ class FeedWebSocket {
     );
     if (currentDateStamp > allowedNextAnnoucement) {
       this.lastAnnouncedTime = currentDateStamp;
-      console.log("orderBookSnapshot from worker: ", orderBookSnapshot);
       this.orderBookState = orderBookSnapshot;
       postMessage({
         type: "ORDER",
@@ -300,7 +293,6 @@ onmessage = (event: MessageEvent) => {
       break;
     }
     case "CHANGE_TICK_SIZE": {
-      console.log(event.data);
       feed.changeTickSize(event.data.tickSize);
       break;
     }
