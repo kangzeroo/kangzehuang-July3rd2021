@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useFeedWorker } from "@/api/feed.hook";
+import OrderTable from "@/components/ordertable";
 
 const feedTickerOptions = {
   PI_XBTUSD: {
@@ -29,7 +30,6 @@ const Orderbook = () => {
       orderBook?.ticker === feedTickerOptions.PI_ETHUSD.ticker
         ? feedTickerOptions.PI_XBTUSD
         : feedTickerOptions.PI_ETHUSD;
-    // setTicker(nextToggleState.ticker);
     setTickSize(nextToggleState.tickSize);
     feed?.postMessage({ type: "TOGGLE_FEED", ticker: nextToggleState });
   };
@@ -60,7 +60,7 @@ const Orderbook = () => {
 
   return (
     <section style={{ overflow: "scroll", maxHeight: "800px" }}>
-      <h1>{orderBook?.ticker}</h1>
+      <h1>{orderBook.ticker}</h1>
       <select
         name="tickSize"
         id="tickSize"
@@ -81,8 +81,10 @@ const Orderbook = () => {
       <button onClick={killFeed}>Kill Feed</button>
       <p>{`${JSON.stringify(orderBook).length} chars length`}</p>
       <br />
-
-      <div>{JSON.stringify(orderBook)}</div>
+      <div style={{ display: "flex", flexDirection: "row" }}>
+        <OrderTable title="Asks" rows={orderBook.asks} />
+        <OrderTable title="Bids" rows={orderBook.bids} />
+      </div>
     </section>
   );
 };
