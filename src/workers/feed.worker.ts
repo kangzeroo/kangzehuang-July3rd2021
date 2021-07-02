@@ -79,7 +79,59 @@ class FeedWebSocket {
     this.feed = feed;
   }
 
-  mapDeltaArrayToHash(deltaArray: TOrderDelta[], dateStamp: Date) {
+  toggleFeed(ticker: ITickerShape) {
+    console.log(`Switching from ${this.ticker} to ${ticker.ticker}`);
+    const unsubscribe = {
+      event: "unsubscribe",
+      feed: "book_ui_1",
+      product_ids: [this.ticker],
+    };
+    this.feed.send(JSON.stringify(unsubscribe));
+    this.clearState();
+    const subscription = {
+      event: "subscribe",
+      feed: "book_ui_1",
+      product_ids: [ticker.ticker],
+    };
+    this.feed.send(JSON.stringify(subscription));
+    this.ticker = ticker.ticker;
+    this.tickSize = ticker.tickSize;
+  }
+
+  changeTickSize(tickSize: number) {
+    console.log("tickSize: ", tickSize);
+    const nextOrderBookState = refreshOrderBookState(
+      tickSize,
+      this.orderBookState
+    );
+    this.orderBookState = nextOrderBookState;
+    this.tickSize = tickSize;
+    postMessage({
+      type: "SNAPSHOT",
+      data: nextOrderBookState,
+    });
+  }
+
+  closeFeed() {
+    try {
+      console.log("closeFeed", this.feed);
+      const unsubscribe = {
+        event: "unsubscribe",
+        feed: "book_ui_1",
+        product_ids: [this.ticker],
+      };
+      this.feed.send(JSON.stringify(unsubscribe));
+      this.feed.close();
+      postMessage({
+        type: "FEED_KILLED",
+      });
+    } catch (e) {
+      console.log("Caught error");
+      throw e;
+    }
+  }
+
+  private mapDeltaArrayToHash(deltaArray: TOrderDelta[], dateStamp: Date) {
     const deltaHash = deltaArray.reduce(
       (acc: { [key: number]: TOrderDeltaWithTimestamp }, curr) => {
         const [price, size] = curr;
@@ -95,7 +147,7 @@ class FeedWebSocket {
     return deltaHash;
   }
 
-  updateDelta(orderDelta: IGranularOrderDelta) {
+  private updateDelta(orderDelta: IGranularOrderDelta) {
     const currentDateStamp = new Date();
     if (!orderDelta.asks || !orderDelta.bids) {
       return;
@@ -174,39 +226,25 @@ class FeedWebSocket {
     }
   }
 
-  toggleFeed(ticker: ITickerShape) {
-    console.log(`Switching from ${this.ticker} to ${ticker.ticker}`);
-    const unsubscribe = {
-      event: "unsubscribe",
-      feed: "book_ui_1",
-      product_ids: [this.ticker],
+  private clearState() {
+    const emptySourceOrderBook = {
+      product_id: "",
+      numLevels: 0,
+      feed: "",
+      asks: {},
+      bids: {},
     };
-    this.feed.send(JSON.stringify(unsubscribe));
-    const subscription = {
-      event: "subscribe",
-      feed: "book_ui_1",
-      product_ids: [ticker.ticker],
+    const emptyOrderBookState = {
+      ticker: "",
+      asks: [],
+      bids: [],
+      maxPriceSize: 0,
     };
-    this.feed.send(JSON.stringify(subscription));
-    this.ticker = ticker.ticker;
-    this.tickSize = ticker.tickSize;
+    this.sourceOrderBook = emptySourceOrderBook;
+    this.orderBookState = emptyOrderBookState;
   }
 
-  changeTickSize(tickSize: number) {
-    console.log("tickSize: ", tickSize);
-    const nextOrderBookState = refreshOrderBookState(
-      tickSize,
-      this.orderBookState
-    );
-    this.orderBookState = nextOrderBookState;
-    this.tickSize = tickSize;
-    postMessage({
-      type: "SNAPSHOT",
-      data: nextOrderBookState,
-    });
-  }
-
-  groupByTickSize({
+  private groupByTickSize({
     bids,
     asks,
     ticker,
@@ -229,25 +267,6 @@ class FeedWebSocket {
       maxPriceSize: newMaxPriceSize,
     };
     return orderBookSnapshot;
-  }
-
-  closeFeed() {
-    try {
-      console.log("closeFeed", this.feed);
-      const unsubscribe = {
-        event: "unsubscribe",
-        feed: "book_ui_1",
-        product_ids: [this.ticker],
-      };
-      this.feed.send(JSON.stringify(unsubscribe));
-      this.feed.close();
-      postMessage({
-        type: "FEED_KILLED",
-      });
-    } catch (e) {
-      console.log("Caught error");
-      throw e;
-    }
   }
 }
 

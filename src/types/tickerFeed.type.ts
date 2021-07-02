@@ -15,7 +15,7 @@ type TPrice = number;
 type TSize = number;
 export type TOrderDelta = [TPrice, TSize];
 export type TOrderDeltaWithTimestamp = {
-  price: TPrice;
+  price: string;
   size: TSize;
   date: Date;
 };

@@ -6,8 +6,15 @@ interface IOrderTable {
   rows: TOrderRow[];
   maxPriceSize: number;
   askOrBid: TAskOrBid;
+  ticker: string;
 }
-const OrderTable = ({ title, rows, maxPriceSize, askOrBid }: IOrderTable) => {
+const OrderTable = ({
+  title,
+  rows,
+  maxPriceSize,
+  askOrBid,
+  ticker,
+}: IOrderTable) => {
   const askOrBidOptions = {
     ask: { key: "ask", color: "red" },
     bid: { key: "bid", color: "green" },
@@ -30,7 +37,10 @@ const OrderTable = ({ title, rows, maxPriceSize, askOrBid }: IOrderTable) => {
           const { price, size, total } = row;
           const colorSpriteWidth = total / maxPriceSize;
           return (
-            <tr key={price} className={styles.ghostRow}>
+            <tr
+              key={`${askOrBid}-${price}-${ticker}`}
+              className={styles.ghostRow}
+            >
               {askOrBid === askOrBidOptions.ask.key ? (
                 <tr className={styles.colorSprite}>
                   <td className={styles.uncolored(colorSpriteWidth)}></td>
@@ -55,7 +65,7 @@ const OrderTable = ({ title, rows, maxPriceSize, askOrBid }: IOrderTable) => {
               <tr className={styles.row}>
                 <td className={styles.cell}>{price}</td>
                 <td className={styles.cell}>{size}</td>
-                <td className={styles.cell}>{total}</td>
+                <td className={styles.cell}>{`${ticker} - ${total}`}</td>
               </tr>
             </tr>
           );

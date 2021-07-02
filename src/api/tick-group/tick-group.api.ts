@@ -49,6 +49,12 @@ export const refreshOrderBookState = (
   return nextOrderBookState;
 };
 
+const getDecimalPlace = (tickSize: number) => {
+  return Math.floor(tickSize) === tickSize
+    ? 0
+    : tickSize.toString().split(".")[1]?.length || 0;
+};
+
 export const groupTickRows = (
   tickSize: number,
   orderDeltas: TOrderDelta[]
@@ -73,12 +79,13 @@ export const groupTickRows = (
   // 21 x 0.5 = 10.5
   // 213 x 0.05 = 10.65
 
-  const roundDownToTickDecimals = (input: number, tickSize: number) => {
+  const decimalPlace = getDecimalPlace(tickSize);
+  const roundDownToTickDecimals = (
+    input: number,
+    tickSize: number,
+    decimalPlace: number
+  ) => {
     // get the decimal places of the tickSize
-    const decimalPlace =
-      Math.floor(tickSize) === tickSize
-        ? 0
-        : tickSize.toString().split(".")[1]?.length || 0;
     if (decimalPlace === 0) {
       return Math.floor(input);
     }
@@ -98,14 +105,21 @@ export const groupTickRows = (
   };
 
   let total = 0;
-  const grouping = orderDeltas.map((delta) => {
-    const [price, size] = delta;
-    total += size;
-    return {
-      price: roundDownToTickDecimals(price, tickSize),
-      size,
-      total,
-    };
-  });
+  const grouping = orderDeltas
+    .sort((a, b) => {
+      const priceIndex = 0;
+      return a[priceIndex] - b[priceIndex];
+    })
+    .map((delta) => {
+      const [price, size] = delta;
+      total += size;
+      return {
+        price: roundDownToTickDecimals(price, tickSize, decimalPlace).toFixed(
+          decimalPlace
+        ),
+        size,
+        total,
+      };
+    });
   return grouping;
 };
