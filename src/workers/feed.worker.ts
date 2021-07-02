@@ -104,7 +104,7 @@ class FeedWebSocket {
       orderDelta.asks.forEach((delta) => {
         const [price, size] = delta;
         const prevPriceSnap = this.sourceOrderBook.asks[price];
-        if (!prevPriceSnap) {
+        if (!prevPriceSnap && size) {
           this.sourceOrderBook.asks[price] = {
             price,
             size,
@@ -127,8 +127,9 @@ class FeedWebSocket {
     if (orderDelta.bids) {
       orderDelta.bids.forEach((delta) => {
         const [price, size] = delta;
+        console.log("size: ", size);
         const prevPriceSnap = this.sourceOrderBook.bids[price];
-        if (!prevPriceSnap) {
+        if (!prevPriceSnap && size) {
           this.sourceOrderBook.bids[price] = {
             price,
             size,

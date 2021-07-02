@@ -54,8 +54,12 @@ const Orderbook = () => {
 
   const tickSizeOptions = [1, 0.5, 0.05];
 
+  if (!orderBook) {
+    return null;
+  }
+
   return (
-    <section>
+    <section style={{ overflow: "scroll", maxHeight: "800px" }}>
       <h1>{orderBook?.ticker}</h1>
       <select
         name="tickSize"
@@ -75,10 +79,10 @@ const Orderbook = () => {
       </select>
       <button onClick={toggleFeed}>Toggle Feed</button>
       <button onClick={killFeed}>Kill Feed</button>
-
+      <p>{`${JSON.stringify(orderBook).length} chars length`}</p>
       <br />
 
-      {JSON.stringify(orderBook)}
+      <div>{JSON.stringify(orderBook)}</div>
     </section>
   );
 };
