@@ -73,10 +73,12 @@ const Orderbook = () => {
           );
         })}
       </select>
-
-      {JSON.stringify(orderBook)}
       <button onClick={toggleFeed}>Toggle Feed</button>
       <button onClick={killFeed}>Kill Feed</button>
+
+      <br />
+
+      {JSON.stringify(orderBook)}
     </section>
   );
 };

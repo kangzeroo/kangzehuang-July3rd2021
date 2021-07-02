@@ -18,17 +18,15 @@ class FeedWebSocket {
   sourceOrderBook: ISourceOrderBook;
   orderBookState: IOrderBookState;
   lastAnnouncedTime: Date;
-  announcementIntervalMs: number;
+  announcementIntervalMs = 2000;
 
   constructor(
     endpoint = "wss://www.cryptofacilities.com/ws/v1",
-    announcementIntervalMs = 2000,
     ticker: ITickerShape = { ticker: "PI_XBTUSD", tickSize: 0.5 }
   ) {
     console.log("CONTR");
     this.ticker = ticker.ticker;
     this.tickSize = ticker.tickSize;
-    this.announcementIntervalMs = announcementIntervalMs;
     const feed = new WebSocket(endpoint);
     feed.onopen = () => {
       const subscription = {
@@ -99,6 +97,9 @@ class FeedWebSocket {
 
   updateDelta(orderDelta: IGranularOrderDelta) {
     const currentDateStamp = new Date();
+    if (!orderDelta.asks || !orderDelta.bids) {
+      return;
+    }
     if (orderDelta.asks) {
       orderDelta.asks.forEach((delta) => {
         const [price, size] = delta;
@@ -147,14 +148,6 @@ class FeedWebSocket {
         }
       });
     }
-    // const orderBookSnapshot = this.groupByTickSize({
-    //   asks: data.asks,
-    //   bids: data.bids,
-    //   ticker: this.ticker,
-    //   tickSize: this.tickSize,
-    // });
-    // this.orderBookState = orderBookSnapshot;
-    // console.log(this.sourceOrderBook);
     const orderBookSnapshot = this.groupByTickSize({
       asks: Object.keys(this.sourceOrderBook.asks).map((key) => {
         const { price, size } = this.sourceOrderBook.asks[parseFloat(key)];
@@ -167,11 +160,18 @@ class FeedWebSocket {
       ticker: this.ticker,
       tickSize: this.tickSize,
     });
-    this.orderBookState = orderBookSnapshot;
-    postMessage({
-      type: "ORDER",
-      data: orderBookSnapshot,
-    });
+    const lastAnnouncedTimeMs = this.lastAnnouncedTime.getTime();
+    const allowedNextAnnoucement = new Date(
+      lastAnnouncedTimeMs + this.announcementIntervalMs
+    );
+    if (currentDateStamp > allowedNextAnnoucement) {
+      this.lastAnnouncedTime = currentDateStamp;
+      this.orderBookState = orderBookSnapshot;
+      postMessage({
+        type: "ORDER",
+        data: orderBookSnapshot,
+      });
+    }
   }
 
   toggleFeed(ticker: ITickerShape) {

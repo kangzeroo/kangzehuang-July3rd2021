@@ -29,7 +29,7 @@ export const useFeedWorker = (): IUseFeedWorker => {
           case "ORDER": {
             const orderBookSnapshot: IOrderBookState = event.data.data;
             console.log(orderBookSnapshot);
-            // setOrderBook(orderBookSnapshot);
+            setOrderBook(orderBookSnapshot);
             break;
           }
           case "FEED_KILLED":
