@@ -4,18 +4,27 @@ export interface ITickerShape {
 }
 
 export type TOrderRow = {
-  price: number;
+  price: TPriceDisplay;
   size: number;
   total: number;
 };
 
+export type TOrderRowUntotaled = {
+  price: TPriceDisplay;
+  size: number;
+  total?: number;
+  date?: Date;
+};
+
 export type TAskOrBid = "ask" | "bid";
 
+type TPriceDisplay = string;
 type TPrice = number;
 type TSize = number;
+export type TOrderDeltaForDisplay = [TPriceDisplay, TSize];
 export type TOrderDelta = [TPrice, TSize];
 export type TOrderDeltaWithTimestamp = {
-  price: string;
+  price: TPriceDisplay;
   size: TSize;
   date: Date;
 };
@@ -28,10 +37,14 @@ export interface ICryptoFacilitiesWSSnapshot {
   asks: TOrderDelta[];
 }
 
+export interface IOrderRowHash {
+  [key: number]: TOrderRow;
+}
+
 export interface IOrderBookState {
   ticker: string;
-  asks: TOrderRow[];
-  bids: TOrderRow[];
+  asks: IOrderRowHash;
+  bids: IOrderRowHash;
   maxPriceSize: number;
 }
 

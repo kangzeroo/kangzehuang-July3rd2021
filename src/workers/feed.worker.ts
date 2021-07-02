@@ -10,6 +10,7 @@ import {
 import {
   groupTickRows,
   refreshOrderBookState,
+  getDecimalPlace,
 } from "@/api/tick-group/tick-group.api";
 class FeedWebSocket {
   feed: WebSocket;
@@ -39,6 +40,7 @@ class FeedWebSocket {
     };
     feed.onmessage = (event) => {
       const data: ICryptoFacilitiesWSSnapshot = JSON.parse(event.data);
+      const decimalPlace = getDecimalPlace(this.tickSize);
       switch (data.feed) {
         case "book_ui_1_snapshot": {
           console.log(data);
@@ -46,14 +48,16 @@ class FeedWebSocket {
           this.lastAnnouncedTime = dateStamp;
           this.sourceOrderBook = {
             ...data,
-            asks: this.mapDeltaArrayToHash(data.asks, dateStamp),
-            bids: this.mapDeltaArrayToHash(data.bids, dateStamp),
+            asks: this.mapDeltaArrayToHash(data.asks, dateStamp, decimalPlace),
+            bids: this.mapDeltaArrayToHash(data.bids, dateStamp, decimalPlace),
           };
           const orderBookSnapshot = this.groupByTickSize({
             asks: data.asks,
             bids: data.bids,
             ticker: this.ticker,
             tickSize: this.tickSize,
+            dateStamp,
+            decimalPlace,
           });
           this.orderBookState = orderBookSnapshot;
           postMessage({
@@ -131,12 +135,16 @@ class FeedWebSocket {
     }
   }
 
-  private mapDeltaArrayToHash(deltaArray: TOrderDelta[], dateStamp: Date) {
+  private mapDeltaArrayToHash(
+    deltaArray: TOrderDelta[],
+    dateStamp: Date,
+    decimalPlace: number
+  ) {
     const deltaHash = deltaArray.reduce(
       (acc: { [key: number]: TOrderDeltaWithTimestamp }, curr) => {
         const [price, size] = curr;
         acc[price] = {
-          price,
+          price: price.toFixed(decimalPlace),
           size,
           date: dateStamp,
         };
@@ -152,13 +160,14 @@ class FeedWebSocket {
     if (!orderDelta.asks || !orderDelta.bids) {
       return;
     }
+    const decimalPlace = getDecimalPlace(this.tickSize);
     if (orderDelta.asks) {
       orderDelta.asks.forEach((delta) => {
         const [price, size] = delta;
         const prevPriceSnap = this.sourceOrderBook.asks[price];
         if (!prevPriceSnap && size) {
           this.sourceOrderBook.asks[price] = {
-            price,
+            price: price.toFixed(decimalPlace),
             size,
             date: currentDateStamp,
           };
@@ -168,7 +177,7 @@ class FeedWebSocket {
             delete this.sourceOrderBook.asks[price];
           } else {
             this.sourceOrderBook.asks[price] = {
-              price,
+              price: price.toFixed(decimalPlace),
               size,
               date: currentDateStamp,
             };
@@ -182,7 +191,7 @@ class FeedWebSocket {
         const prevPriceSnap = this.sourceOrderBook.bids[price];
         if (!prevPriceSnap && size) {
           this.sourceOrderBook.bids[price] = {
-            price,
+            price: price.toFixed(decimalPlace),
             size,
             date: currentDateStamp,
           };
@@ -192,7 +201,7 @@ class FeedWebSocket {
             delete this.sourceOrderBook.bids[price];
           } else {
             this.sourceOrderBook.bids[price] = {
-              price,
+              price: price.toFixed(decimalPlace),
               size,
               date: currentDateStamp,
             };
@@ -203,14 +212,16 @@ class FeedWebSocket {
     const orderBookSnapshot = this.groupByTickSize({
       asks: Object.keys(this.sourceOrderBook.asks).map((key) => {
         const { price, size } = this.sourceOrderBook.asks[parseFloat(key)];
-        return [price, size];
+        return [parseFloat(price), size];
       }),
       bids: Object.keys(this.sourceOrderBook.bids).map((key) => {
         const { price, size } = this.sourceOrderBook.bids[parseFloat(key)];
-        return [price, size];
+        return [parseFloat(price), size];
       }),
       ticker: this.ticker,
       tickSize: this.tickSize,
+      dateStamp: currentDateStamp,
+      decimalPlace: getDecimalPlace(this.tickSize),
     });
     const lastAnnouncedTimeMs = this.lastAnnouncedTime.getTime();
     const allowedNextAnnoucement = new Date(
@@ -218,6 +229,7 @@ class FeedWebSocket {
     );
     if (currentDateStamp > allowedNextAnnoucement) {
       this.lastAnnouncedTime = currentDateStamp;
+      console.log("orderBookSnapshot from worker: ", orderBookSnapshot);
       this.orderBookState = orderBookSnapshot;
       postMessage({
         type: "ORDER",
@@ -249,11 +261,15 @@ class FeedWebSocket {
     asks,
     ticker,
     tickSize,
+    dateStamp,
+    decimalPlace,
   }: {
     bids: TOrderDelta[];
     asks: TOrderDelta[];
     ticker: string;
     tickSize: number;
+    dateStamp: Date;
+    decimalPlace: number;
   }) {
     const newMaxPriceSize = asks
       .concat(bids)
@@ -262,8 +278,14 @@ class FeedWebSocket {
       .reduce((acc, curr) => acc + curr, 0);
     const orderBookSnapshot: IOrderBookState = {
       ticker,
-      asks: groupTickRows(tickSize, asks),
-      bids: groupTickRows(tickSize, bids),
+      asks: groupTickRows(
+        tickSize,
+        this.mapDeltaArrayToHash(asks, dateStamp, decimalPlace)
+      ),
+      bids: groupTickRows(
+        tickSize,
+        this.mapDeltaArrayToHash(bids, dateStamp, decimalPlace)
+      ),
       maxPriceSize: newMaxPriceSize,
     };
     return orderBookSnapshot;
