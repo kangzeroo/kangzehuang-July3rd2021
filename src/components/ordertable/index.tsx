@@ -19,7 +19,6 @@ const OrderTable = ({
     ask: { key: "ask", color: "red" },
     bid: { key: "bid", color: "green" },
   };
-
   return (
     <table className={styles.table}>
       <thead>
@@ -34,7 +33,7 @@ const OrderTable = ({
       </thead>
       <tbody>
         {Object.keys(rows)
-          .map((key) => rows[parseFloat(key)])
+          .map((key) => rows[key as unknown as number])
           .filter((k) => k)
           .map((row) => {
             const { price, size, total } = row;
