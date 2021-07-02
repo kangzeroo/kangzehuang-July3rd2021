@@ -127,7 +127,6 @@ class FeedWebSocket {
     if (orderDelta.bids) {
       orderDelta.bids.forEach((delta) => {
         const [price, size] = delta;
-        console.log("size: ", size);
         const prevPriceSnap = this.sourceOrderBook.bids[price];
         if (!prevPriceSnap && size) {
           this.sourceOrderBook.bids[price] = {
@@ -218,10 +217,24 @@ class FeedWebSocket {
     ticker: string;
     tickSize: number;
   }) {
+    console.log("---- maxPriceSize");
+    console.log(
+      asks
+        .concat(bids)
+        .filter((d) => d[1])
+        .map((d) => d[0] * d[1])
+        .sort((a, b) => b - a)
+    );
+    const newMaxPriceSize = asks
+      .concat(bids)
+      .filter((d) => d[1])
+      .map((d) => d[1])
+      .reduce((acc, curr) => acc + curr, 0);
     const orderBookSnapshot: IOrderBookState = {
       ticker,
       asks: groupTickRows(tickSize, asks),
       bids: groupTickRows(tickSize, bids),
+      maxPriceSize: newMaxPriceSize,
     };
     return orderBookSnapshot;
   }

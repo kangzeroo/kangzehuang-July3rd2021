@@ -30,6 +30,7 @@ export interface IOrderBookState {
   ticker: string;
   asks: TOrderRow[];
   bids: TOrderRow[];
+  maxPriceSize: number;
 }
 
 export interface ISourceOrderBook {
