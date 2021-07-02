@@ -26,9 +26,12 @@ export const useFeedWorker = (): IUseFeedWorker => {
             setOrderBook(orderBookSnapshot);
             break;
           }
-          case "ORDER":
-            // console.log("---- delta ----", event.data);
+          case "ORDER": {
+            const orderBookSnapshot: IOrderBookState = event.data.data;
+            console.log(orderBookSnapshot);
+            setOrderBook(orderBookSnapshot);
             break;
+          }
           case "FEED_KILLED":
             console.log("frontend: feed killed");
             break;

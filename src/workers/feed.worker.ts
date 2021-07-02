@@ -3,6 +3,9 @@ import {
   TOrderDelta,
   ICryptoFacilitiesWSSnapshot,
   IOrderBookState,
+  ISourceOrderBook,
+  IGranularOrderDelta,
+  TOrderDeltaWithTimestamp,
 } from "@/types/tickerFeed.type";
 import {
   groupTickRows,
@@ -12,7 +15,10 @@ class FeedWebSocket {
   feed: WebSocket;
   ticker: string;
   tickSize: number;
+  sourceOrderBook: ISourceOrderBook;
   orderBookState: IOrderBookState;
+  lastAnnouncedTime: Date;
+  announcementIntervalMs = 2000;
 
   constructor(
     endpoint = "wss://www.cryptofacilities.com/ws/v1",
@@ -36,6 +42,13 @@ class FeedWebSocket {
       switch (data.feed) {
         case "book_ui_1_snapshot": {
           console.log(data);
+          const dateStamp = new Date();
+          this.lastAnnouncedTime = dateStamp;
+          this.sourceOrderBook = {
+            ...data,
+            asks: this.mapDeltaArrayToHash(data.asks, dateStamp),
+            bids: this.mapDeltaArrayToHash(data.bids, dateStamp),
+          };
           const orderBookSnapshot = this.groupByTickSize({
             asks: data.asks,
             bids: data.bids,
@@ -50,11 +63,7 @@ class FeedWebSocket {
           break;
         }
         case "book_ui_1": {
-          // console.log("-- updated feed");
-          postMessage({
-            type: "ORDER",
-            data: data,
-          });
+          this.updateDelta(data);
           break;
         }
       }
@@ -68,6 +77,101 @@ class FeedWebSocket {
       throw error;
     };
     this.feed = feed;
+  }
+
+  mapDeltaArrayToHash(deltaArray: TOrderDelta[], dateStamp: Date) {
+    const deltaHash = deltaArray.reduce(
+      (acc: { [key: number]: TOrderDeltaWithTimestamp }, curr) => {
+        const [price, size] = curr;
+        acc[price] = {
+          price,
+          size,
+          date: dateStamp,
+        };
+        return acc;
+      },
+      {}
+    );
+    return deltaHash;
+  }
+
+  updateDelta(orderDelta: IGranularOrderDelta) {
+    const currentDateStamp = new Date();
+    if (!orderDelta.asks || !orderDelta.bids) {
+      return;
+    }
+    if (orderDelta.asks) {
+      orderDelta.asks.forEach((delta) => {
+        const [price, size] = delta;
+        const prevPriceSnap = this.sourceOrderBook.asks[price];
+        if (!prevPriceSnap) {
+          this.sourceOrderBook.asks[price] = {
+            price,
+            size,
+            date: currentDateStamp,
+          };
+        }
+        if (prevPriceSnap && prevPriceSnap.date < currentDateStamp) {
+          if (size === 0) {
+            delete this.sourceOrderBook.asks[price];
+          } else {
+            this.sourceOrderBook.asks[price] = {
+              price,
+              size,
+              date: currentDateStamp,
+            };
+          }
+        }
+      });
+    }
+    if (orderDelta.bids) {
+      orderDelta.bids.forEach((delta) => {
+        const [price, size] = delta;
+        const prevPriceSnap = this.sourceOrderBook.bids[price];
+        if (!prevPriceSnap) {
+          this.sourceOrderBook.bids[price] = {
+            price,
+            size,
+            date: currentDateStamp,
+          };
+        }
+        if (prevPriceSnap && prevPriceSnap.date < currentDateStamp) {
+          if (size === 0) {
+            delete this.sourceOrderBook.bids[price];
+          } else {
+            this.sourceOrderBook.bids[price] = {
+              price,
+              size,
+              date: currentDateStamp,
+            };
+          }
+        }
+      });
+    }
+    const orderBookSnapshot = this.groupByTickSize({
+      asks: Object.keys(this.sourceOrderBook.asks).map((key) => {
+        const { price, size } = this.sourceOrderBook.asks[parseFloat(key)];
+        return [price, size];
+      }),
+      bids: Object.keys(this.sourceOrderBook.bids).map((key) => {
+        const { price, size } = this.sourceOrderBook.bids[parseFloat(key)];
+        return [price, size];
+      }),
+      ticker: this.ticker,
+      tickSize: this.tickSize,
+    });
+    const lastAnnouncedTimeMs = this.lastAnnouncedTime.getTime();
+    const allowedNextAnnoucement = new Date(
+      lastAnnouncedTimeMs + this.announcementIntervalMs
+    );
+    if (currentDateStamp > allowedNextAnnoucement) {
+      this.lastAnnouncedTime = currentDateStamp;
+      this.orderBookState = orderBookSnapshot;
+      postMessage({
+        type: "ORDER",
+        data: orderBookSnapshot,
+      });
+    }
   }
 
   toggleFeed(ticker: ITickerShape) {
