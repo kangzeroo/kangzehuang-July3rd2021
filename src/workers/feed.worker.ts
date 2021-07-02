@@ -217,14 +217,6 @@ class FeedWebSocket {
     ticker: string;
     tickSize: number;
   }) {
-    console.log("---- maxPriceSize");
-    console.log(
-      asks
-        .concat(bids)
-        .filter((d) => d[1])
-        .map((d) => d[0] * d[1])
-        .sort((a, b) => b - a)
-    );
     const newMaxPriceSize = asks
       .concat(bids)
       .filter((d) => d[1])

@@ -66,7 +66,6 @@ const Orderbook = () => {
   if (!orderBook) {
     return null;
   }
-  console.log(`orderBook.maxPriceSize: ${orderBook.maxPriceSize}`);
   return (
     <section className={styles.container}>
       <div className={styles.topbar}>
@@ -95,11 +94,13 @@ const Orderbook = () => {
           title="Asks"
           rows={orderBook.asks}
           maxPriceSize={orderBook.maxPriceSize}
+          askOrBid={"ask"}
         />
         <OrderTable
           title="Bids"
           rows={orderBook.bids}
           maxPriceSize={orderBook.maxPriceSize}
+          askOrBid={"bid"}
         />
       </div>
 

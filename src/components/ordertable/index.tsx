@@ -1,17 +1,23 @@
 import { css } from "@emotion/css";
-import { TOrderRow } from "@/types/tickerFeed.type";
+import { TOrderRow, TAskOrBid } from "@/types/tickerFeed.type";
 
 interface IOrderTable {
   title: string;
   rows: TOrderRow[];
   maxPriceSize: number;
+  askOrBid: TAskOrBid;
 }
-const OrderTable = ({ title, rows, maxPriceSize }: IOrderTable) => {
+const OrderTable = ({ title, rows, maxPriceSize, askOrBid }: IOrderTable) => {
+  const askOrBidOptions = {
+    ask: { key: "ask", color: "red" },
+    bid: { key: "bid", color: "green" },
+  };
+
   return (
     <table className={styles.table}>
       <thead>
         <tr className={styles.title}>
-          <th>{`${maxPriceSize} - ${title}`}</th>
+          <th>{`${title}`}</th>
         </tr>
         <tr className={styles.heading}>
           <th className={styles.head}>Price</th>
@@ -24,11 +30,28 @@ const OrderTable = ({ title, rows, maxPriceSize }: IOrderTable) => {
           const { price, size, total } = row;
           const colorSpriteWidth = total / maxPriceSize;
           return (
-            <tr className={styles.ghostRow}>
-              <div className={styles.colorSprite}>
-                <div className={styles.colored(colorSpriteWidth)}></div>
-                <div className={styles.uncolored(colorSpriteWidth)}></div>
-              </div>
+            <tr key={price} className={styles.ghostRow}>
+              {askOrBid === askOrBidOptions.ask.key ? (
+                <tr className={styles.colorSprite}>
+                  <td className={styles.uncolored(colorSpriteWidth)}></td>
+                  <td
+                    className={styles.colored(
+                      colorSpriteWidth,
+                      askOrBidOptions[askOrBid].color
+                    )}
+                  ></td>
+                </tr>
+              ) : (
+                <tr className={styles.colorSprite}>
+                  <td
+                    className={styles.colored(
+                      colorSpriteWidth,
+                      askOrBidOptions[askOrBid].color
+                    )}
+                  ></td>
+                  <td className={styles.uncolored(colorSpriteWidth)}></td>
+                </tr>
+              )}
               <tr className={styles.row}>
                 <td className={styles.cell}>{price}</td>
                 <td className={styles.cell}>{size}</td>
@@ -87,7 +110,7 @@ const styles = {
     min-height: 20px;
     height: 100%;
   `,
-  colored: (showPercentage: number, color = "red") => css`
+  colored: (showPercentage: number, color: string) => css`
     flex: ${showPercentage * 10};
     background-color: ${color};
   `,
