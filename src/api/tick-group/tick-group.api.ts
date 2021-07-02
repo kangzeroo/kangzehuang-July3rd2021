@@ -40,6 +40,11 @@ export const refreshOrderBookState = (
       tickSize,
       convertToOrderDeltas(prevOrderBookState.asks)
     ),
+    maxPriceSize: prevOrderBookState.asks
+      .concat(prevOrderBookState.bids)
+      .filter((d) => d.size)
+      .map((d) => d.size)
+      .reduce((acc, curr) => acc + curr, 0),
   };
   return nextOrderBookState;
 };

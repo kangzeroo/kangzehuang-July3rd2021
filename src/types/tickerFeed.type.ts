@@ -9,6 +9,8 @@ export type TOrderRow = {
   total: number;
 };
 
+export type TAskOrBid = "ask" | "bid";
+
 type TPrice = number;
 type TSize = number;
 export type TOrderDelta = [TPrice, TSize];
@@ -30,6 +32,7 @@ export interface IOrderBookState {
   ticker: string;
   asks: TOrderRow[];
   bids: TOrderRow[];
+  maxPriceSize: number;
 }
 
 export interface ISourceOrderBook {
