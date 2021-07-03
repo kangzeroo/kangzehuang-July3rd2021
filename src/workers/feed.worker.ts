@@ -13,13 +13,13 @@ import {
   getDecimalPlace,
 } from "@/api/tick-group/tick-group.api";
 class FeedWebSocket {
-  feed: WebSocket;
-  ticker: string;
-  tickSize: number;
-  sourceOrderBook: ISourceOrderBook;
-  orderBookState: IOrderBookState;
-  lastAnnouncedTime: Date;
-  announcementIntervalMs = 2000;
+  private feed: WebSocket;
+  private ticker: string;
+  private tickSize: number;
+  private sourceOrderBook: ISourceOrderBook;
+  private orderBookState: IOrderBookState;
+  private lastAnnouncedTime: Date;
+  private announcementIntervalMs = 2000;
 
   constructor(
     endpoint = "wss://www.cryptofacilities.com/ws/v1",
@@ -36,7 +36,7 @@ class FeedWebSocket {
       };
       this.feed.send(JSON.stringify(subscription));
     };
-    feed.onmessage = (event) => {
+    feed.onmessage = (event: MessageEvent) => {
       const data: ICryptoFacilitiesWSSnapshot = JSON.parse(event.data);
       const decimalPlace = getDecimalPlace(this.tickSize);
       switch (data.feed) {
